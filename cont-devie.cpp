@@ -69,21 +69,23 @@ public:
 	  for (int j = 0; j < num_of_variables; ++j) {
 	    std::vector<int> i_modified = i;
 	    i_modified[j] += 1;
-	    std::vector<int> equation_values_with_one_vector = {};
+	    std::vector<int> one_vector = {};
 	    for (int k = 0; k < j; ++k) {
-	      equation_values_with_one_vector.push_back(0);
+	      one_vector.push_back(0);
 	    }
-	    for (int k = 0; k < num_of_equations; ++k) {
-	      equation_values_with_one_vector.push_back(matrix[k][j]);
-	    }
+	    one_vector.push_back(1);
 	    for (int k = j + 1; k < num_of_variables; ++k) {
-	      equation_values_with_one_vector.push_back(0);
-	    }
+	      one_vector.push_back(0);
+	    }	    
+	    std::vector<int> equation_values_with_one_vector = {};
 	    std::vector<int> equation_values_with_i_modified = {};
 	    for (int k = 0; k < num_of_equations; ++k) {
+	      int equation_value_with_i_modified_at_kth_row = 0;
 	      for (int l = 0; l < num_of_variables; ++l) {
-		equation_values_with_i_modified.push_back(i_modified[l] * matrix[k][l]);
+		equation_value_with_i_modified_at_kth_row += i_modified[l] * matrix[k][l];
 	      }
+	      equation_values_with_i_modified.push_back(equation_value_with_i_modified_at_kth_row);
+	      equation_values_with_one_vector.push_back(one_vector[j] * matrix[k][j]);
 	    }
 	    int scalar_product = {};
 	    for (int k = 0; k < num_of_equations; ++k) {
