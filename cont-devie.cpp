@@ -18,11 +18,12 @@ class SystemOfLinearDiophanteEquationSolver {};
 
 class ContejeanDevieSolver : SystemOfLinearDiophanteEquationSolver {
   std::ofstream f;
+public:
   ContejeanDevieSolver(Matrix matrix) {
     int num_of_equations = matrix.size();
     int num_of_variables = matrix[0].size();
     std::vector<std::vector<int>> initial_solution = {};
-    for (int i = 0; i < num_of_equations; ++i) {
+    for (int i = 0; i < num_of_variables; ++i) {
       std::vector<int> this_vector = {};
       for (int j = 0; j < i; ++j) {
 	this_vector.emplace_back(0);
@@ -59,30 +60,49 @@ class ContejeanDevieSolver : SystemOfLinearDiophanteEquationSolver {
 		  continue;
 		}
 	      }
-	      temporary_solution.push_back(i);
 	    }
 	  }
+	  temporary_solution.push_back(i);
 	}
-	for (int i = 0; i < num_of_variables; ++i) {
-	  for (auto j : temporary_solution) {
-	    std::vector<int> i_modified = j;
-	    i_modified[i] += 1;
-	    int scalar_product = 0;
-	    for (int k = 0; k < num_of_variables; ++k) {
-	      scalar_product += i_modified[k] * j[k];
+	initial_solution = {};
+	for (auto i : temporary_solution) {
+	  for (int j = 0; j < num_of_variables; ++j) {
+	    std::vector<int> i_modified = i;
+	    i_modified[j] += 1;
+	    std::vector<int> equation_values_with_one_vector = {};
+	    for (int k = 0; k < j; ++k) {
+	      equation_values_with_one_vector.push_back(0);
+	    }
+	    for (int k = 0; k < num_of_equations; ++k) {
+	      equation_values_with_one_vector.push_back(matrix[k][j]);
+	    }
+	    for (int k = j + 1; k < num_of_variables; ++k) {
+	      equation_values_with_one_vector.push_back(0);
+	    }
+	    std::vector<int> equation_values_with_i_modified = {};
+	    for (int k = 0; k < num_of_equations; ++k) {
+	      for (int l = 0; l < num_of_variables; ++l) {
+		equation_values_with_i_modified.push_back(i_modified[l] * matrix[k][l]);
+	      }
+	    }
+	    int scalar_product = {};
+	    for (int k = 0; k < num_of_equations; ++k) {
+	      scalar_product += equation_values_with_one_vector[k] * equation_values_with_i_modified[k];
 	    }
 	    if (scalar_product < 0) {
-	      initial_solution.push_back(i_modified);
+	      initial_solution.push_back(i);
 	    }
 	  }
-	}
-	
-	f << 1;
+	}	
+	int foo = 1;
+	// f << 1;
       }
   }
 };
 
-void solve_system_of_equations() {
-  std::vector<std::vector<int>> v = {{-1, 1, 2, -3}, {-1, 3, -2, -1}};
+int main() {
+  std::vector<std::vector<int>> v = {std::vector<int>{-1, 1, 2, -3}, std::vector<int>{-1, 3, -2, -1}};
   Matrix m{v};
+  ContejeanDevieSolver solver(m);
+  return 0;
 }
