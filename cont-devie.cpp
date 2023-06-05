@@ -32,7 +32,7 @@ public:
 
   int EvaluateSelectedEquationAtVector(std::vector<int> x, int i) {
     int evaluated_equation = 0;
-    for (int j = 0; i < _matrix[i].size(); ++j) {
+    for (int j = 0; j < _matrix[i].size(); ++j) {
       evaluated_equation += _matrix[i][j];
     }
     return evaluated_equation;
@@ -50,6 +50,14 @@ public:
   
 };
 
+std::vector<int> AddTwoVectors(std::vector<int> a, std::vector<int> b) {
+  std::vector<int> sum;
+  for (int i = 0; i < a.size(); ++i) {
+    sum.push_back(a[i] + b[i]);
+  }
+  return sum;
+}
+
 class ContejeanDevieSolver : public SystemOfLinearDiophanteEquationSolver {
   
 private:
@@ -59,9 +67,64 @@ private:
   
 public:
 
-  
   void Solve() override {
-    ;
+    auto initial_solution = GenerateBasisVectorsInSpace();
+    std::vector<std::vector<int>> final_solution = {};
+    int num_of_variables = _matrix[0].size();
+    int num_of_equations = _matrix.size();
+    while (initial_solution.size() != 0) {
+      for (auto& i : initial_solution) {
+	bool null = true;
+	for (int j = 0; j < num_of_equations; ++j) {
+	  int value_at_this_equation = _matrix.EvaluateSelectedEquationAtVector(i, j);
+	  if (value_at_this_equation != 0) {
+	    null = false;
+	    break;
+	  }
+	}
+	if (null) {
+	  final_solution.push_back(i);
+	}
+      }
+      std::vector<std::vector<int>> temporary_solution;
+      for (auto& i : initial_solution) {
+	bool i_is_duplicate_from_j = false;
+	for (auto& j : final_solution) {
+	  if (i == j) {
+	    i_is_duplicate_from_j = true;
+	  }
+	}
+	if (i_is_duplicate_from_j == true) {
+	  continue;
+	}
+	bool comparable_in_terms_of_partial_order = false;
+	for (auto& j : final_solution) {
+	  for (int k = 0; k < num_of_variables; ++k) {
+	    for (int l = 0; l < num_of_variables; ++l) {
+	      if (i[k] <= j[k] and i[l] > j[l]) {
+		comparable_in_terms_of_partial_order = true;
+	      }
+	    }
+	  }
+	}
+	if (!comparable_in_terms_of_partial_order) {
+	  temporary_solution.push_back(i);
+	}
+      }
+      initial_solution = {};
+      for (auto i : temporary_solution) {
+	for (int j = 0; j < num_of_variables; ++j) {
+	  std::vector<int> one_vector = GenerateOneVector(j);
+	  std::vector<int> equation_values_with_one_vector = _matrix.EvaluateAllEquationsAtVector(one_vector);
+	  std::vector<int> equation_values_with_i = _matrix.EvaluateAllEquationsAtVector(i);
+	  int scalar_product = EvaluateScalarProduct(equation_values_with_one_vector, equation_values_with_i);
+	  if (scalar_product < 0) {
+	    std::vector<int> vector_under_test = AddTwoVectors(i, one_vector);
+	    initial_solution.push_back(vector_under_test);
+	  }
+	}
+      }
+    }
   }
 
   void OutputToFile(std::string file_name) override {
@@ -106,66 +169,8 @@ public:
     return scalar_product;
   }
   
-  ContejeanDevieSolver(Matrix matrix) : _matrix(matrix) {
-    auto initial_solution = GenerateBasisVectorsInSpace();
-    std::vector<std::vector<int>> final_solution = {};
-    int num_of_variables = matrix[0].size();
-    int num_of_equations = matrix.size();
-    while (initial_solution.size() != 0) {
-	for (auto& i : initial_solution) {
-	  bool null = true;
-	  for (int j = 0; j < num_of_equations; ++j) {
-	    int value_at_this_equation = _matrix.EvaluateSelectedEquationAtVector(i, j);
-	    if (value_at_this_equation != 0) {
-	      null = false;
-	      break;
-	    }
-	  }
-	  if (null) {
-	    final_solution.push_back(i);
-	  }
-	}
-	std::vector<std::vector<int>> temporary_solution = {};
-	for (auto& i : initial_solution) {
-	  bool i_is_duplicate_from_j = false;
-	  for (auto& j : final_solution) {
-	    if (i == j) {
-	      i_is_duplicate_from_j = true;
-	    }
-	  }
-	  if (i_is_duplicate_from_j == true) {
-	    continue;
-	  }
-	  bool comparable_in_terms_of_partial_order = false;
-	  for (auto& j : final_solution) {
-	    for (int k = 0; k < num_of_variables; ++k) {
-	      for (int l = 0; l < num_of_variables; ++l) {
-		if (i[k] <= j[k] and i[l] > j[l]) {
-		  comparable_in_terms_of_partial_order = true;
-		}
-	      }
-	    }
-	  }
-	  if (!comparable_in_terms_of_partial_order) {
-	    temporary_solution.push_back(i);
-	  }
-	}
-	initial_solution = {};
-	for (auto i : temporary_solution) {
-	  for (int j = 0; j < num_of_variables; ++j) {
-	    std::vector<int> i_modified = i;
-	    i_modified[j] += 1;
-	    std::vector<int> one_vector = GenerateOneVector(j);
-	    std::vector<int> equation_values_with_one_vector = matrix.EvaluateAllEquationsAtVector(one_vector);
-	    std::vector<int> equation_values_with_i_modified = matrix.EvaluateAllEquationsAtVector(i_modified);
-	    int scalar_product = EvaluateScalarProduct(equation_values_with_one_vector, equation_values_with_i_modified);
-	    if (scalar_product < 0) {
-	      initial_solution.push_back(i);
-	    }
-	  }
-	}
-      }
-  }
+  ContejeanDevieSolver(Matrix matrix) : _matrix(matrix) {}
+  
 };
 
 int main() {
@@ -173,5 +178,7 @@ int main() {
   Matrix m{v};
   
   ContejeanDevieSolver solver(m);
+  solver.Solve();
+  solver.OutputToFile("test.out");
   return 0;
 }
